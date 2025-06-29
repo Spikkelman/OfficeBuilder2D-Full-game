@@ -1,0 +1,68 @@
+name: Deploy API on Azure
+
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  buildConfiguration: 'Release'
+
+stages:
+  - stage: BuildAndTest
+    displayName: Build and Test API
+    jobs:
+      - job: BuildAPI
+        displayName: Build and test .NET API
+        pool:
+          vmImage: 'windows-latest'
+
+        variables:
+          DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+          DOTNET_CLI_TELEMETRY_OPTOUT: true
+          ConnectionStrings__DefaultConnection: $(TEST_DB_CONNECTION)
+
+        steps:
+          - task: UseDotNet@2
+            inputs:
+              packageType: 'sdk'
+              version: '9.0.x'
+
+          - task: Checkout@1
+
+          - script: dotnet restore OfficeBuilderAPI/OfficeBuilderAPI.sln
+            displayName: 'Restore dependencies'
+
+          - script: dotnet build OfficeBuilderAPI/OfficeBuilderAPI.sln --configuration $(buildConfiguration) --no-restore
+            displayName: 'Build API'
+
+          - script: dotnet test OfficeBuilderAPI.Tests/OfficeBuilderAPI.Tests.csproj --no-build --logger trx
+            displayName: 'Run unit tests'
+
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFiles: '**/*.trx'
+              testRunTitle: 'API Unit Tests'
+
+  - stage: Deploy
+    displayName: Deploy to Azure App Service
+    dependsOn: BuildAndTest
+    condition: succeeded()
+    jobs:
+      - deployment: DeployWebApp
+        displayName: Deploy API to Azure
+        environment: 'production'
+        pool:
+          vmImage: 'windows-latest'
+
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebApp@1
+                  inputs:
+                    azureSubscription: '<Your Azure Connection Name>'
+                    appType: 'webApp'
+                    appName: '<Your Azure App Service Name>'
+                    package: '$(System.DefaultWorkingDirectory)/OfficeBuilderAPI/bin/Release/net9.0/publish'
