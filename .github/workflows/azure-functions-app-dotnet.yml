@@ -27,7 +27,7 @@ jobs:
         working-directory: ./OfficeBuilderAPI
         
       - name: Run tests
-        run: dotnet test OfficeBuilderAPI.Tests/OfficeBuilderAPI.Tests.csproj --no-build --logger trx
+        run: dotnet test OfficeBuilderAPI.Tests.csproj --no-build --logger trx
         working-directory: ./OfficeBuilderAPI.Tests
         
       - name: Publish API
