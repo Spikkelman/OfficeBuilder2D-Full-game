@@ -24,7 +24,7 @@ jobs:
 
     - name: 📦 Restore dependencies
       run: dotnet restore OfficeBuilderAPI.sln
-      working-directory: ./OfficeBuilderAPI
+      working-directory: OfficeBuilder2D-Full-game/OfficeBuilderAPI
 
     - name: 🏗️ Build solution
       run: dotnet build OfficeBuilderAPI.sln --no-restore
