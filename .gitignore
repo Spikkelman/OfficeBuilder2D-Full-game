@@ -1,0 +1,61 @@
+# =======================
+# ASP.NET Core (API)
+# =======================
+**/bin/
+**/obj/
+**/*.user
+**/*.vspscc
+*.db
+*.db-shm
+*.db-wal
+
+# Secrets
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+
+# Entity Framework
+Migrations/
+
+# Logs
+**/logs/
+*.log
+
+# =======================
+# Unity (Game)
+# =======================
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+Assets/AssetStoreTools*
+*.csproj
+*.unityproj
+*.sln
+*.userprefs
+*.pidb
+*.suo
+*.apk
+*.unitypackage
+*.uvproj
+*.user
+
+# Unity crash logs
+sysinfo.txt
+crash.txt
+
+# Visual Studio Code
+.vscode/
+
+# Mac OS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# =======================
+# Git
+# =======================
+!.gitignore

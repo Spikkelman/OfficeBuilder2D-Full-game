@@ -1,0 +1,6 @@
+@OfficeBuilderAPI_HostAddress = http://localhost:5136
+
+GET {{OfficeBuilderAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
