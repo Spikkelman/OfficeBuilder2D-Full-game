@@ -32,7 +32,7 @@ jobs:
       run: dotnet test OfficeBuilderAPI.Tests/OfficeBuilderAPI.Tests.csproj --no-build --logger trx
 
     - name: Upload test results (optioneel)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: test-results
         path: '**/TestResults/*.trx'
