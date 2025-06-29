@@ -30,9 +30,7 @@ Migrations/
 [Bb]uild/
 [Bb]uilds/
 Assets/AssetStoreTools*
-*.csproj
 *.unityproj
-*.sln
 *.userprefs
 *.pidb
 *.suo
