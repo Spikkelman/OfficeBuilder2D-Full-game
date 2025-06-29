@@ -7,79 +7,81 @@ using OfficeBuilderAPI;
 
 namespace OfficeBuilderAPI.Tests;
 
-public class TileDbContextTests
+public class IntegrationTests
 {
-    private AppDbContext CreateDb(string dbName)
+    private AppDbContext GetDb()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: dbName)
+            .UseSqlServer("insertSQLConnectionString")
             .Options;
 
         return new AppDbContext(options);
     }
 
     [Fact]
-    public async Task SaveTilesDirectlyToDb_ShouldStoreTiles()
+    public async Task Test_Create_And_Load_User()
     {
-        var db = CreateDb("TestDb1");
+        using var db = GetDb();
 
-        var user = new User { Username = "user1", PasswordHash = new byte[1], PasswordSalt = new byte[1] };
-        db.Users.Add(user);
-        await db.SaveChangesAsync();
-
-        var world = new World { WorldName = "WorldOne", UserId = user.Id };
-        db.Worlds.Add(world);
-        await db.SaveChangesAsync();
-
-        db.TileData.AddRange(new List<TileData>
+        var user = new User
         {
-            new TileData { TileType = "BasicTile1", X = 0, Y = 0, WorldId = world.Id },
-            new TileData { TileType = "BasicTile2", X = 1, Y = 1, WorldId = world.Id }
-        });
+            Username = "integrationuser",
+            PasswordHash = new byte[] { 1, 2, 3 },
+            PasswordSalt = new byte[] { 4, 5, 6 }
+        };
 
-        await db.SaveChangesAsync();
-
-        var tiles = await db.TileData.Where(t => t.WorldId == world.Id).ToListAsync();
-        Assert.Equal(2, tiles.Count);
-    }
-
-    [Fact]
-    public async Task LoadTiles_ShouldReturnCorrectTileData()
-    {
-        var db = CreateDb("TestDb2");
-
-        var user = new User { Username = "user2", PasswordHash = new byte[1], PasswordSalt = new byte[1] };
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
-        var world = new World { WorldName = "WorldTwo", UserId = user.Id };
-        db.Worlds.Add(world);
-        await db.SaveChangesAsync();
+        var saved = await db.Users.FirstOrDefaultAsync(u => u.Username == "integrationuser");
 
-        db.TileData.Add(new TileData { TileType = "BasicTile3", X = -2, Y = 5, WorldId = world.Id });
-        await db.SaveChangesAsync();
-
-        var tile = await db.TileData.FirstOrDefaultAsync(t => t.WorldId == world.Id);
-        Assert.NotNull(tile);
-        Assert.Equal("BasicTile3", tile.TileType);
-        Assert.Equal(-2, tile.X);
-        Assert.Equal(5, tile.Y);
+        Assert.NotNull(saved);
+        Assert.Equal("integrationuser", saved.Username);
     }
 
     [Fact]
-    public async Task NoTilesSaved_ShouldReturnEmptyList()
+    public async Task Test_World_Creation_And_Query()
     {
-        var db = CreateDb("TestDb3");
+        using var db = GetDb();
 
-        var user = new User { Username = "user3", PasswordHash = new byte[1], PasswordSalt = new byte[1] };
-        db.Users.Add(user);
-        await db.SaveChangesAsync();
+        var user = db.Users.FirstOrDefault(u => u.Username == "integrationuser");
+        Assert.NotNull(user);
 
-        var world = new World { WorldName = "WorldEmpty", UserId = user.Id };
+        var world = new World
+        {
+            UserId = user.Id,
+            WorldName = "IntegrationWorld"
+        };
+
         db.Worlds.Add(world);
         await db.SaveChangesAsync();
 
+        var found = await db.Worlds.FirstOrDefaultAsync(w => w.WorldName == "IntegrationWorld");
+        Assert.NotNull(found);
+        Assert.Equal(user.Id, found.UserId);
+    }
+
+    [Fact]
+    public async Task Test_TileData_Storage()
+    {
+        using var db = GetDb();
+
+        var world = await db.Worlds.FirstOrDefaultAsync(w => w.WorldName == "IntegrationWorld");
+        Assert.NotNull(world);
+
+        var tile = new TileData
+        {
+            TileType = "BasicTile1",
+            X = 0,
+            Y = 0,
+            WorldId = world.Id
+        };
+
+        db.TileData.Add(tile);
+        await db.SaveChangesAsync();
+
         var tiles = await db.TileData.Where(t => t.WorldId == world.Id).ToListAsync();
-        Assert.Empty(tiles);
+
+        Assert.Contains(tiles, t => t.TileType == "BasicTile1" && t.X == 0 && t.Y == 0);
     }
 }
