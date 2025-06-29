@@ -20,15 +20,19 @@ jobs:
 
       - name: Restore dependencies
         run: dotnet restore OfficeBuilderAPI.sln
+        working-directory: ./OfficeBuilderAPI
 
       - name: Build API
         run: dotnet build OfficeBuilderAPI.sln --configuration Release --no-restore
-
+        working-directory: ./OfficeBuilderAPI
+        
       - name: Run tests
         run: dotnet test OfficeBuilderAPI.Tests/OfficeBuilderAPI.Tests.csproj --no-build --logger trx
-
+        working-directory: ./OfficeBuilderAPI.Tests
+        
       - name: Publish API
         run: dotnet publish OfficeBuilderAPI/OfficeBuilderAPI.csproj --configuration Release --output ./publish
+        working-directory: ./OfficeBuilderAPI
 
       - name: Deploy to Azure
         uses: azure/webapps-deploy@v2
