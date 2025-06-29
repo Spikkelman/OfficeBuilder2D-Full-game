@@ -1,0 +1,38 @@
+name: .NET API CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    env:
+      ConnectionStrings__DefaultConnection: ${{ secrets.TEST_DB_CONNECTION }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: 📦 Restore dependencies
+      run: dotnet restore OfficeBuilderAPI/OfficeBuilderAPI.sln
+
+    - name: 🏗️ Build solution
+      run: dotnet build OfficeBuilderAPI/OfficeBuilderAPI.sln --no-restore
+
+    - name: 🧪 Run tests
+      run: dotnet test OfficeBuilderAPI.Tests/OfficeBuilderAPI.Tests.csproj --no-build --logger trx
+
+    - name: ⬆️ Upload test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: '**/TestResults/*.trx'
