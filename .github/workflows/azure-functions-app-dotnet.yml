@@ -31,7 +31,7 @@ jobs:
         working-directory: ./OfficeBuilderAPI.Tests
         
       - name: Publish API
-        run: dotnet publish OfficeBuilderAPI.csproj --configuration Release --output
+        run: dotnet publish OfficeBuilderAPI.csproj --configuration Release --output /publish
         working-directory: ./OfficeBuilderAPI
 
       - name: Deploy to Azure
