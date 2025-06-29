@@ -23,15 +23,18 @@ jobs:
         dotnet-version: '9.0.x'
 
     - name: 📦 Restore dependencies
-      run: dotnet restore OfficeBuilderAPI/OfficeBuilderAPI.sln
+      run: dotnet restore OfficeBuilderAPI.sln
+      working-directory: ./OfficeBuilderAPI
 
     - name: 🏗️ Build solution
-      run: dotnet build OfficeBuilderAPI/OfficeBuilderAPI.sln --no-restore
+      run: dotnet build OfficeBuilderAPI.sln --no-restore
+      working-directory: ./OfficeBuilderAPI
 
     - name: 🧪 Run tests
-      run: dotnet test OfficeBuilderAPI.Tests/OfficeBuilderAPI.Tests.csproj --no-build --logger trx
+      run: dotnet test ../OfficeBuilderAPI.Tests/OfficeBuilderAPI.Tests.csproj --no-build --logger trx
+      working-directory: ./OfficeBuilderAPI
 
-    - name: ⬆️ Upload test results
+    - name: ⬆️ Upload test results (optioneel)
       uses: actions/upload-artifact@v4
       with:
         name: test-results
