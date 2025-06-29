@@ -1,68 +1,38 @@
-name: Deploy API on Azure
+name: Deploy .NET API to Azure
 
-trigger:
-  branches:
-    include:
+on:
+  push:
+    branches:
       - main
 
-variables:
-  buildConfiguration: 'Release'
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest
 
-stages:
-  - stage: BuildAndTest
-    displayName: Build and Test API
-    jobs:
-      - job: BuildAPI
-        displayName: Build and test .NET API
-        pool:
-          vmImage: 'windows-latest'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-        variables:
-          DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
-          DOTNET_CLI_TELEMETRY_OPTOUT: true
-          ConnectionStrings__DefaultConnection: $(TEST_DB_CONNECTION)
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x'
 
-        steps:
-          - task: UseDotNet@2
-            inputs:
-              packageType: 'sdk'
-              version: '9.0.x'
+      - name: Restore dependencies
+        run: dotnet restore OfficeBuilderAPI.sln
 
-          - task: Checkout@1
+      - name: Build API
+        run: dotnet build OfficeBuilderAPI.sln --configuration Release --no-restore
 
-          - script: dotnet restore OfficeBuilderAPI/OfficeBuilderAPI.sln
-            displayName: 'Restore dependencies'
+      - name: Run tests
+        run: dotnet test OfficeBuilderAPI.Tests/OfficeBuilderAPI.Tests.csproj --no-build --logger trx
 
-          - script: dotnet build OfficeBuilderAPI/OfficeBuilderAPI.sln --configuration $(buildConfiguration) --no-restore
-            displayName: 'Build API'
+      - name: Publish API
+        run: dotnet publish OfficeBuilderAPI/OfficeBuilderAPI.csproj --configuration Release --output ./publish
 
-          - script: dotnet test OfficeBuilderAPI.Tests/OfficeBuilderAPI.Tests.csproj --no-build --logger trx
-            displayName: 'Run unit tests'
-
-          - task: PublishTestResults@2
-            condition: succeededOrFailed()
-            inputs:
-              testResultsFiles: '**/*.trx'
-              testRunTitle: 'API Unit Tests'
-
-  - stage: Deploy
-    displayName: Deploy to Azure App Service
-    dependsOn: BuildAndTest
-    condition: succeeded()
-    jobs:
-      - deployment: DeployWebApp
-        displayName: Deploy API to Azure
-        environment: 'production'
-        pool:
-          vmImage: 'windows-latest'
-
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - task: AzureWebApp@1
-                  inputs:
-                    azureSubscription: '<Your Azure Connection Name>'
-                    appType: 'webApp'
-                    appName: '<Your Azure App Service Name>'
-                    package: '$(System.DefaultWorkingDirectory)/OfficeBuilderAPI/bin/Release/net9.0/publish'
+      - name: Deploy to Azure
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: officebuilder-api 
+          publish-profile: ${{ secrets_AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./publish
